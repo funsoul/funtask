@@ -1,0 +1,32 @@
+{
+  "name": "funsoul/funtask",
+  "description": "yet another multitasking framework base swoole",
+  "keywords": ["swoole", "multitasking"],
+  "repositories": {
+    "packagist": {
+      "type": "composer",
+      "url": "https://packagist.phpcomposer.com"
+    }
+  },
+  "require": {
+    "php": ">=5.5",
+    "ext-swoole": ">=1.9.2",
+    "vlucas/phpdotenv": "^2.4"
+  },
+  "authors": [
+    {
+      "name": "funsoul",
+      "email": "cyanming2016@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Funsoul\\Funtask\\": "src",
+      "App\\": "app"
+    }
+  },
+  "bin": [
+    "bin/funtask"
+  ]
+
+}

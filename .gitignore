@@ -1,0 +1,4 @@
+LICENSE
+vendor
+.env
+composer.lock

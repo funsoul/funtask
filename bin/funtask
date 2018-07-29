@@ -1,0 +1,14 @@
+#!/usr/bin/env php
+<?php
+date_default_timezone_set('Asia/Shanghai');
+
+define('FUN_TASK_APP_PATH', __DIR__ . '/../app');
+define('FUN_TASK_ROOT_PATH', __DIR__ . '/../src');
+define('DS', DIRECTORY_SEPARATOR);
+
+require FUN_TASK_ROOT_PATH . '/../vendor/autoload.php';
+require_once FUN_TASK_ROOT_PATH . DS . 'Util' . DS . 'functions' . DS . 'helper.php';
+
+(new Dotenv\Dotenv(FUN_TASK_ROOT_PATH . '/../'))->load();
+
+new Funsoul\Funtask\Service\ProcessPool();
