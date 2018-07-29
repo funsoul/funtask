@@ -90,7 +90,7 @@ class ProcessPool
             if ($this->_isMasterKilled()) {
                 if ($msgKey !== false) {
                     Logger::info("current num of process[{$this->_current_num}] worker[{$worker->pid}] starting consume: {$msgKey}");
-                    FunTask::run($msgKey);
+                    FunTask::consume($msgKey);
                 }
                 break;
             }
@@ -100,7 +100,7 @@ class ProcessPool
                 continue;
 
             Logger::info("current num of process[{$this->_current_num}] worker[{$worker->pid}] starting consume: {$msgKey}");
-            FunTask::run($msgKey);
+            FunTask::consume($msgKey);
         }
 
         Logger::info("worker[{$worker->pid}] exit" );
@@ -113,7 +113,7 @@ class ProcessPool
     private function _dispatch()
     {
         \swoole_timer_tick($this->_config['ticker'], function($timer_id) {
-            $msgKey = FunTask::getData();
+            $msgKey = FunTask::dispatch();
             if (isset($msgKey) && ! empty($msgKey)) {
                 // push one process and all process will share it
                 $process = current($this->_process_list);
@@ -162,7 +162,7 @@ class ProcessPool
         \swoole_process::signal(SIGCHLD, function($sig) {
             while($ret = \swoole_process::wait(false)) {
                 $this->_rebootProcess($ret['pid']);
-                Logger::info( "回收子进程[{$ret['pid']}]" );
+                Logger::info( "recycling child process[{$ret['pid']}]" );
             }
         });
     }

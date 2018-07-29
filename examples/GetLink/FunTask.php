@@ -1,5 +1,6 @@
 <?php
 namespace App\Task;
+
 use Funsoul\Funtask\Task\Base as Task;
 
 class FunTask implements Task
