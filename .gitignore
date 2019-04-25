@@ -1,4 +1,4 @@
 LICENSE
 vendor
-.env
 composer.lock
+.idea
