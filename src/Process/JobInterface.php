@@ -1,5 +1,5 @@
 <?php
-namespace Funsoul\Funtask;
+namespace Funsoul\Funtask\Process;
 
 /**
  * Interface JobInterface

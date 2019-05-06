@@ -1,6 +1,11 @@
 <?php declare(strict_types=1);
 
 namespace Funsoul\Funtask;
+use Funsoul\Funtask\Coroutine\Coroutine;
+use Funsoul\Funtask\Coroutine\CoJobInterface;
+use Funsoul\Funtask\Process\JobInterface;
+use Funsoul\Funtask\Process\ProcessGroup;
+use Funsoul\Funtask\Process\ProcessPool;
 
 /**
  * Class Funtask
@@ -12,6 +17,9 @@ class Funtask {
     /** @var JobInterface */
     private $job;
 
+    /** @var CoJobInterface */
+    private $coJob;
+
     /** @var string */
     private $type = 'POOL';
 
@@ -21,8 +29,8 @@ class Funtask {
     /** @var int */
     private $workerNum = 3;
 
-    /** @var int */
-    private $pause = 0;
+    /** @var callable */
+    private $finishCallback;
 
     /**
      * @return JobInterface
@@ -97,20 +105,30 @@ class Funtask {
     }
 
     /**
-     * @return int
+     * @return CoJobInterface
      */
-    public function getPause(): int
+    public function getCoJob(): CoJobInterface
     {
-        return $this->pause;
+        return $this->coJob;
     }
 
     /**
-     * @param int $pause
+     * @param callable $finishCallback
      * @return Funtask
      */
-    public function setPause(int $pause): Funtask
+    public function setFinishCallback(callable $finishCallback): Funtask
     {
-        $this->pause = $pause;
+        $this->finishCallback = $finishCallback;
+        return $this;
+    }
+
+    /**
+     * @param CoJobInterface $coJob
+     * @return Funtask
+     */
+    public function setCoJob(CoJobInterface $coJob): Funtask
+    {
+        $this->coJob = $coJob;
         return $this;
     }
 
@@ -123,13 +141,24 @@ class Funtask {
 
         switch (strtoupper($this->type)) {
             case 'POOL':
-                $pool = new ProcessPool($this->job);
+                $pool = new ProcessPool();
                 $pool->setWorkerName($this->workerName)
-                    ->setWorkerPauseSec($this->pause)
+                    ->setWorkerNum($this->workerNum)
+                    ->setJob($this->job)
                     ->start();
                 break;
             case 'GROUP':
-                new ProcessGroup($this->job, $this->workerNum, $this->workerName, $this->pause);
+                $group = new ProcessGroup();
+                $group->setWorkerName($this->workerName)
+                    ->setWorkerNum($this->workerNum)
+                    ->setJob($this->job)
+                    ->start();
+                break;
+            case 'CO':
+                $co = new Coroutine();
+                $co->setCoNum($this->workerNum)
+                    ->setJob($this->coJob)
+                    ->start($this->finishCallback);
                 break;
             default:
                 throw new \Exception('invalid type');
@@ -139,9 +168,6 @@ class Funtask {
 
     private function checkParams()
     {
-        if (! is_object($this->job))
-            throw new \InvalidArgumentException('Job is empty');
-
         if (empty($this->type))
             throw new \InvalidArgumentException('type is empty');
     }

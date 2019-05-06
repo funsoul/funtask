@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Funsoul\Funtask;
+namespace Funsoul\Funtask\Process;
 
 use Funsoul\Funtask\Exception\PhpVersionException;
 use Funsoul\Funtask\Exception\SwooleNotFoundException;

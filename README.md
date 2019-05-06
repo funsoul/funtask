@@ -1,7 +1,7 @@
 funtask
 ===============
 
-yet another multitasking framework base swoole
+yet another multitasking framework base swoole4
 
 ### env
 

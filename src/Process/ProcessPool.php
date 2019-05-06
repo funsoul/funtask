@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Funsoul\Funtask;
+namespace Funsoul\Funtask\Process;
 
 use Swoole\Process\Pool;
 
@@ -13,14 +13,20 @@ use Swoole\Process\Pool;
  */
 class ProcessPool extends Base
 {
-    /** @var int pause second */
-    private $workerPauseSec= 0;
-
     /** @var Pool */
     private $pool;
 
     /** @var string */
     private $workerName = 'Worker';
+
+    /** @var int */
+    private $workerNum = 3;
+
+    /** @var JobInterface */
+    private $job;
+
+    /** @var callable */
+    private $workerStopCallback = null;
 
     /**
      * @param string $workerName
@@ -33,38 +39,53 @@ class ProcessPool extends Base
     }
 
     /**
-     * @param int $workerPauseSec
+     * @param int $workerNum
      * @return ProcessPool
      */
-    public function setWorkerPauseSec(int $workerPauseSec): ProcessPool
+    public function setWorkerNum(int $workerNum): ProcessPool
     {
-        $this->workerPauseSec = $workerPauseSec;
+        $this->workerNum = $workerNum;
+        return $this;
+    }
+
+    /**
+     * @param JobInterface $job
+     * @return ProcessPool
+     */
+    public function setJob(JobInterface $job): ProcessPool
+    {
+        $this->job = $job;
+        return $this;
+    }
+
+    /**
+     * @param callable $workerStopCallback
+     * @return ProcessPool
+     */
+    public function setWorkerStopCallback(callable $workerStopCallback): ProcessPool
+    {
+        $this->workerStopCallback = $workerStopCallback;
         return $this;
     }
 
     /**
      * ProcessPool constructor.
      *
-     * @param JobInterface $job
-     * @param int $workerNum
-     * @param string $workerName
-     * @param int $pauseSecond
-     *
      * @throws \Exception
      */
-    public function __construct(JobInterface $job, int $workerNum = 3, string $workerName = 'Worker', int $pauseSecond = 1)
+    public function __construct()
     {
         $this->beforeStart();
 
-        $this->workerName = $workerName;
-        $this->workerPauseSec = $pauseSecond;
+        if ($this->workerNum <= 0)
+            $this->workerNum = 3;
 
-        $this->pool = new Pool($workerNum);
+        $this->pool = new Pool($this->workerNum);
 
         $masterPid = getmypid();
 
-        $this->pool->on("WorkerStart", function ($pool, $workerId) use ($masterPid, $job) {
-            $this->workerStart($workerId, $masterPid, $job);
+        $this->pool->on("WorkerStart", function ($pool, $workerId) use ($masterPid) {
+            $this->workerStart($workerId, $masterPid);
         });
 
         $this->pool->on("WorkerStop", function ($pool, $workerId) {
@@ -75,11 +96,10 @@ class ProcessPool extends Base
     /**
      * @param int $workerId
      * @param int $masterPid
-     * @param JobInterface $job
      *
      * @throws \Exception
      */
-    private function workerStart($workerId = 0, $masterPid = 0, JobInterface $job)
+    private function workerStart($workerId = 0, $masterPid = 0)
     {
         $running = true;
 
@@ -92,21 +112,22 @@ class ProcessPool extends Base
             if ($this->isMasterKilled($masterPid)) {
                 $running = false;
 
-                $job->handle();
+                $this->job->handle();
             } else {
-                $running = $job->handle();
-
-                sleep($this->workerPauseSec);
+                $running = $this->job->handle();
             }
         }
     }
 
     /**
      * @param int $workerId
+     * @return mixed
      */
     private function workerStop($workerId = 0)
     {
-
+        if (is_callable($this->workerStopCallback))
+            return $this->workerStopCallback($workerId);
+        return $workerId;
     }
 
     public function start()
